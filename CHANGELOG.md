@@ -7,6 +7,8 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-15
+
 ### Added
 
 - `CartItem` (a line of the cart of a user or of a guest by a session token), `Order` (number, state of the `order_state` LOV, customer, contacts, comment, `money` total, `ownedBy()`, `makeNumber()`, `itemsTotal()`), `OrderItem` (a copy of the cart line with a state of the `order_item_state` LOV); states `new`, `paid`, `done`, `cancelled`.
@@ -16,4 +18,5 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Model classes from the config (`models.order`, `models.order_item`, `models.cart_item`), so an application adds its own fields in subclasses; fields both line classes have are copied from a cart line to an order item.
 - Migration in the `shop` schema (publish tag `mutable-content-shop-migrations`), LOVs and classes registered in the core registries, Russian labels.
 
-[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/commits/main
+[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/amarenkov/laravel-mutable-content-shop/releases/tag/v0.1.0

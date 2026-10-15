@@ -2,6 +2,7 @@
 
 [![tests](https://github.com/amarenkov/laravel-mutable-content-shop/actions/workflows/tests.yml/badge.svg)](https://github.com/amarenkov/laravel-mutable-content-shop/actions/workflows/tests.yml)
 [![Packagist](https://img.shields.io/packagist/v/amarenkov/laravel-mutable-content-shop)](https://packagist.org/packages/amarenkov/laravel-mutable-content-shop)
+![coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)
 
 Shop domain for [`amarenkov/laravel-mutable-content`](https://github.com/amarenkov/laravel-mutable-content):
 carts of signed in users and guests, orders with snapshots of what was bought, price breaks and
