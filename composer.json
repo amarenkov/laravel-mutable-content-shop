@@ -1,0 +1,62 @@
+{
+    "name": "amarenkov/laravel-mutable-content-shop",
+    "description": "Shop domain for laravel-mutable-content: carts of users and guests, orders with item snapshots, price breaks and money totals, with services, without a UI.",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "eloquent",
+        "shop",
+        "ecommerce",
+        "cart",
+        "orders",
+        "money",
+        "dynamic-fields",
+        "custom-fields"
+    ],
+    "homepage": "https://github.com/amarenkov/laravel-mutable-content-shop",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexey Marenkov",
+            "email": "alex@marenkov.dev",
+            "homepage": "https://github.com/amarenkov"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/amarenkov/laravel-mutable-content-shop/issues",
+        "source": "https://github.com/amarenkov/laravel-mutable-content-shop"
+    },
+    "require": {
+        "php": "^8.4",
+        "amarenkov/laravel-mutable-content": "^0.7.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Amarenkov\\MutableContentShop\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Amarenkov\\MutableContentShop\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Amarenkov\\MutableContentShop\\MutableContentShopServiceProvider"
+            ]
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0",
+        "larastan/larastan": "^3.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse"
+    }
+}
