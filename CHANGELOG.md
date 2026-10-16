@@ -7,6 +7,13 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Invoice` of an order: number, date, `money` amount and paid amount, payment state of the new `invoice_payment_state` LOV (`unpaid`, `partially_paid`, `paid`) kept in line with the amounts on save, document file on the `invoices_disk` config disk, comment; `due()`, `hasFile()`, `Invoice::disk()`. A paid amount in another currency throws `DomainException`.
+- `Order::invoices()`, `invoicedTotal()`, `paidTotal()`.
+- Migration `create_shop_tables_invoices` (publish tag `mutable-content-shop-migrations`); model class from the `models.invoice` config.
+- State LOV classes from the config (`lovs.order_state`, `lovs.order_item_state`), so an application adds its own states in subclasses.
+
 ## [0.1.0] - 2026-10-15
 
 ### Added

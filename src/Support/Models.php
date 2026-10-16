@@ -3,6 +3,7 @@
 namespace Amarenkov\MutableContentShop\Support;
 
 use Amarenkov\MutableContentShop\Models\CartItem;
+use Amarenkov\MutableContentShop\Models\Invoice;
 use Amarenkov\MutableContentShop\Models\Order;
 use Amarenkov\MutableContentShop\Models\OrderItem;
 
@@ -34,6 +35,14 @@ class Models
     public static function cartItem(): string
     {
         return config('mutable-content-shop.models.cart_item') ?? CartItem::class;
+    }
+
+    /**
+     * @return class-string<Invoice>
+     */
+    public static function invoice(): string
+    {
+        return config('mutable-content-shop.models.invoice') ?? Invoice::class;
     }
 
     /**

@@ -26,5 +26,15 @@
     "Unit price": "Цена за единицу",
     "Price breaks": "Цены по количеству",
     "Minimum order quantity": "Минимальный заказ",
-    "Order multiple": "Кратность"
+    "Order multiple": "Кратность",
+    "Invoice": "Счёт",
+    "Invoice payment state": "Оплата счёта",
+    "Unpaid": "Не оплачен",
+    "Partially paid": "Оплачен частично",
+    "Amount": "Сумма",
+    "Paid amount": "Оплачено",
+    "Payment state": "Оплата",
+    "Date": "Дата",
+    "File": "Файл",
+    "File name": "Имя файла"
 }

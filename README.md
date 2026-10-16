@@ -5,8 +5,9 @@
 ![coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)
 
 Shop domain for [`amarenkov/laravel-mutable-content`](https://github.com/amarenkov/laravel-mutable-content):
-carts of signed in users and guests, orders with snapshots of what was bought, price breaks and
-exact money totals, with a service and an event to build any storefront on.
+carts of signed in users and guests, orders with snapshots of what was bought, invoices with
+partial payments, price breaks and exact money totals, with a service and an event to build any
+storefront on.
 
 ## At a glance
 
@@ -42,12 +43,14 @@ $order->number;                          // 202610150042
 | `CartItem` | A line of the cart of a user (`user_id`) or of a guest (`token` kept in the session) |
 | `Order` | Number, state, customer, contacts (first and last name, company, phone, email), comment, total |
 | `OrderItem` | A copy of the cart line it was made of, with its own state |
+| `Invoice` | An invoice of an order: number, date, amount, paid amount, payment state, document file, comment |
 
 Cart and order lines share the `PricedLine` trait: what is sold (`sellable_type`, `sellable_id`),
 name, price breaks, minimum order quantity, order multiple, quantity, unit price and total.
 `HasPriceBreaks` alone suits a catalog model: one price is a break from the quantity of 1.
 
-States are LOVs: `order_state` and `order_item_state` with `new`, `paid`, `done` and `cancelled`.
+States are LOVs: `order_state` and `order_item_state` with `new`, `paid`, `done` and `cancelled`,
+`invoice_payment_state` with `unpaid`, `partially_paid` and `paid`.
 
 ## Requirements
 
@@ -138,6 +141,60 @@ dispatched after the commit, a good place for notifications. An empty cart throw
 The number is the `order_number_prefix` config value, the date and the order id padded to four
 digits. Override `Order::makeNumber()` in a subclass for another format.
 
+### Invoices
+
+An invoice belongs to an order and keeps the amount, the paid amount and the document. The
+payment state follows the amounts on every save: `unpaid` without a payment, `partially_paid`
+below the amount, `paid` when the amount is covered. A paid amount in another currency throws
+`DomainException`.
+
+```php
+$invoice = Invoice::create([
+    Invoice::FIELD_ORDER_ID => $order->id,
+    Invoice::FIELD_NUMBER => '2026-117',
+    Invoice::FIELD_DATE => '2026-10-16',
+    Invoice::FIELD_AMOUNT => Money::of('1250', 'USD'),
+    Invoice::FIELD_FILE => $upload->store('invoices', config('mutable-content-shop.invoices_disk')),
+    Invoice::FIELD_FILE_NAME => $upload->getClientOriginalName(),
+]);
+
+$invoice->paid = Money::of('500', 'USD');
+$invoice->save();                        // payment_state: partially_paid
+$invoice->due();                         // Money 750
+
+$order->invoicedTotal();                 // sum of the invoice amounts
+$order->paidTotal();                     // sum of the paid amounts
+```
+
+Files are stored on the `invoices_disk` config disk (`local` by default, so not public);
+`Invoice::disk()` returns it. Serving the file is up to the application with its access checks.
+
+### Own states
+
+The state LOV classes come from the config too. A subclass keeps the LOV code and lists all its
+items, the package ones included, since LOV items are read from the attributes of the class itself:
+
+```php
+// config/mutable-content-shop.php
+'lovs' => [
+    'order_state' => App\Lovs\OrderState::class,
+],
+```
+
+```php
+#[ClassCode(OrderState::CLASS_CODE)]
+#[ClassLabel('Order state')]
+#[LovItem(OrderState::NEW, 'New')]
+#[LovItem(self::CONFIRMED, 'Confirmed')]
+#[LovItem(OrderState::PAID, 'Paid')]
+#[LovItem(OrderState::DONE, 'Done')]
+#[LovItem(OrderState::CANCELLED, 'Cancelled')]
+class OrderState extends \Amarenkov\MutableContentShop\Lovs\OrderState
+{
+    public const CONFIRMED = 'confirmed';
+}
+```
+
 ### Own fields and subclasses
 
 Fields added from the admin of the core are copied from cart lines to order items when both
@@ -149,6 +206,7 @@ classes have them. Fields from code go to subclasses set in the config:
     'order' => App\Models\Order::class,
     'order_item' => App\Models\OrderItem::class,
     'cart_item' => App\Models\CartItem::class,
+    'invoice' => App\Models\Invoice::class,
 ],
 ```
 

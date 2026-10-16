@@ -7,8 +7,8 @@ use Illuminate\Support\ServiceProvider;
 use Amarenkov\MutableContent\Domain\LovRegistry;
 use Amarenkov\MutableContent\Domain\MutableClassRegistry;
 
-use Amarenkov\MutableContentShop\Lovs\OrderItemState;
-use Amarenkov\MutableContentShop\Lovs\OrderState;
+use Amarenkov\MutableContentShop\Lovs\InvoicePaymentState;
+use Amarenkov\MutableContentShop\Support\Lovs;
 use Amarenkov\MutableContentShop\Support\Models;
 
 class MutableContentShopServiceProvider extends ServiceProvider
@@ -24,13 +24,15 @@ class MutableContentShopServiceProvider extends ServiceProvider
             $registry
                 ->add(Models::order())
                 ->add(Models::orderItem())
-                ->add(Models::cartItem());
+                ->add(Models::cartItem())
+                ->add(Models::invoice());
         });
 
         $this->callAfterResolving(LovRegistry::class, function (LovRegistry $registry) {
             $registry
-                ->addClass(OrderState::class)
-                ->addClass(OrderItemState::class);
+                ->addClass(Lovs::orderState())
+                ->addClass(Lovs::orderItemState())
+                ->addClass(InvoicePaymentState::class);
         });
     }
 

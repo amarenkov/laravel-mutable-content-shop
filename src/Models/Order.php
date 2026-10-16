@@ -67,6 +67,22 @@ class Order extends ModelWithFields
     // static
     protected static array|bool|null $fieldDefinitions = null;
 
+    // protected
+    protected function sumOfInvoices(string $code): ?Money
+    {
+        $result = null;
+
+        foreach ($this->invoices()->get() as $invoice) {
+            $amount = $invoice->getMoney($code);
+
+            if ($amount) {
+                $result = $result ? $result->add($amount) : $amount;
+            }
+        }
+
+        return $result;
+    }
+
     // public
     public function scopeOwnedBy(Builder $query, Authenticatable|int $user): Builder
     {
@@ -84,6 +100,30 @@ class Order extends ModelWithFields
     public function items(): HasMany
     {
         return $this->hasMany(Models::orderItem(), OrderItem::FIELD_ORDER_ID);
+    }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Models::invoice(), Invoice::FIELD_ORDER_ID);
+    }
+
+    /**
+     * Sum of the invoice amounts.
+     */
+    public function invoicedTotal(): ?Money
+    {
+        return $this->sumOfInvoices(Invoice::FIELD_AMOUNT);
+    }
+
+    /**
+     * Sum of the amounts paid by the invoices.
+     */
+    public function paidTotal(): ?Money
+    {
+        return $this->sumOfInvoices(Invoice::FIELD_PAID);
     }
 
     /**
