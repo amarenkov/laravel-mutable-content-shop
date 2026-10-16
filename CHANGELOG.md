@@ -7,6 +7,8 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-16
+
 ### Added
 
 - `Invoice` of an order: number, date, `money` amount and paid amount, payment state of the new `invoice_payment_state` LOV (`unpaid`, `partially_paid`, `paid`) kept in line with the amounts on save, document file on the `invoices_disk` config disk, comment; `due()`, `hasFile()`, `Invoice::disk()`. A paid amount in another currency throws `DomainException`.
@@ -25,5 +27,6 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Model classes from the config (`models.order`, `models.order_item`, `models.cart_item`), so an application adds its own fields in subclasses; fields both line classes have are copied from a cart line to an order item.
 - Migration in the `shop` schema (publish tag `mutable-content-shop-migrations`), LOVs and classes registered in the core registries, Russian labels.
 
-[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/amarenkov/laravel-mutable-content-shop/releases/tag/v0.1.0
