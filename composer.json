@@ -28,7 +28,7 @@
     },
     "require": {
         "php": "^8.4",
-        "amarenkov/laravel-mutable-content": "^0.7.7"
+        "amarenkov/laravel-mutable-content": "^0.8"
     },
     "autoload": {
         "psr-4": {
@@ -47,7 +47,7 @@
             ]
         },
         "branch-alias": {
-            "dev-main": "0.2.x-dev"
+            "dev-main": "0.3.x-dev"
         }
     },
     "require-dev": {
