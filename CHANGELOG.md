@@ -7,6 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-06
+
+Requires `amarenkov/laravel-mutable-content` ^0.9.
+
 ### Fixed
 
 - `Cart::checkout()` locks the lines: a double submit cannot place two orders.
@@ -37,7 +41,8 @@ Requires `amarenkov/laravel-mutable-content` ^0.8.
 - Model classes from the config (`models.order`, `models.order_item`, `models.cart_item`), so an application adds its own fields in subclasses; fields both line classes have are copied from a cart line to an order item.
 - Migration in the `shop` schema (publish tag `mutable-content-shop-migrations`), LOVs and classes registered in the core registries, Russian labels.
 
-[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/amarenkov/laravel-mutable-content-shop/releases/tag/v0.1.0
