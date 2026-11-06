@@ -38,9 +38,6 @@ class OrderItem extends ModelWithFields
     #[CFAType(Type::TYPE_LOV_ITEM), CFALabel('State'), CFAIsRequired, CFALovCode(OrderItemState::CLASS_CODE)]
     public const FIELD_STATE = 'state';
 
-    // static
-    protected static array|bool|null $fieldDefinitions = null;
-
     // public
     /**
      * @return BelongsTo<Order, $this>

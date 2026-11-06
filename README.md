@@ -219,8 +219,6 @@ class CartItem extends \Amarenkov\MutableContentShop\Models\CartItem
     // unit prices with more digits than the currency has
     #[CFAType(Type::TYPE_MONEY), CFALabel('Unit price'), CFATypeSettings([TypeSettings::DECIMALS => 6])]
     public const FIELD_UNIT_PRICE = 'unit_price';
-
-    protected static array|bool|null $fieldDefinitions = null;
 }
 ```
 

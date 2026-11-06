@@ -28,9 +28,6 @@ class Product extends ModelWithFields implements Sellable
     #[CFAType(Type::TYPE_STRING), CFALabel('SKU')]
     public const FIELD_SKU = 'sku';
 
-    // static
-    protected static array|bool|null $fieldDefinitions = null;
-
     // public
     public function sellableType(): string
     {

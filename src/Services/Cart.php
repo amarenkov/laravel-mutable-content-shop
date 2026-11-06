@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use Amarenkov\MutableContent\Models\ModelWithFields;
 
 use Amarenkov\MutableContent\ValueObjects\Money;
+use Amarenkov\MutableContent\Helpers\UserHelper;
 
 use Amarenkov\MutableContentShop\Contracts\Sellable;
 use Amarenkov\MutableContentShop\Events\OrderPlaced;
@@ -36,7 +37,7 @@ class Cart
     // static
     public static function of(Authenticatable|int $user): static
     {
-        return new static($user instanceof Authenticatable ? (int)$user->getAuthIdentifier() : $user, null);
+        return new static(UserHelper::id($user), null);
     }
 
     public static function guest(string $token): static
@@ -194,17 +195,7 @@ class Cart
      */
     public function total(): ?Money
     {
-        $result = null;
-
-        foreach ($this->items() as $line) {
-            $total = $line->getMoney(CartItem::FIELD_TOTAL);
-
-            if ($total) {
-                $result = $result ? $result->add($total) : $total;
-            }
-        }
-
-        return $result;
+        return Money::sum($this->items()->map(fn (CartItem $line) => $line->getMoney(CartItem::FIELD_TOTAL)));
     }
 
     /**
@@ -244,7 +235,7 @@ class Cart
     public function checkout(array $fields = []): Order
     {
         return DB::transaction(function () use ($fields) {
-            $lines = $this->items();
+            $lines = $this->query()->orderBy('id')->lockForUpdate()->get();
 
             if ($lines->isEmpty()) {
                 throw new DomainException(__('mutable-content-shop::shop.cart_empty'));

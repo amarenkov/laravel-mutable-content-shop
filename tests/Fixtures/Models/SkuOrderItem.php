@@ -23,6 +23,4 @@ class SkuOrderItem extends OrderItem
     #[CFAType(Type::TYPE_MONEY), CFALabel('Unit price'), CFATypeSettings([TypeSettings::ALLOW_NEGATIVE => false, TypeSettings::DECIMALS => 6])]
     public const FIELD_UNIT_PRICE = 'unit_price';
 
-    // static
-    protected static array|bool|null $fieldDefinitions = null;
 }

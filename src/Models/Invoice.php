@@ -66,8 +66,6 @@ class Invoice extends ModelWithFields
     public const FIELD_COMMENT = 'comment';
 
     // static
-    protected static array|bool|null $fieldDefinitions = null;
-
     protected static function booted(): void
     {
         static::saving(function (Invoice $invoice) {

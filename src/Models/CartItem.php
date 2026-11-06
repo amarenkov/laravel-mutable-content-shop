@@ -33,9 +33,6 @@ class CartItem extends ModelWithFields
     #[CFAType(Type::TYPE_STRING), CFALabel('Guest token')]
     public const FIELD_TOKEN = 'token';
 
-    // static
-    protected static array|bool|null $fieldDefinitions = null;
-
     // public
     public function user(): BelongsTo
     {

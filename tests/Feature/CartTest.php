@@ -5,6 +5,7 @@ namespace Amarenkov\MutableContentShop\Tests\Feature;
 use DomainException;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 
@@ -26,6 +27,23 @@ use Amarenkov\MutableContentShop\Tests\TestCase;
 
 class CartTest extends TestCase
 {
+    public function test_checkout_locks_the_lines(): void
+    {
+        $cart = Cart::of(1);
+        $cart->add($this->makeProduct('Bolt', '2'), 1);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $cart->checkout();
+
+        $locks = array_filter(DB::getQueryLog(), fn (array $query) => str_contains($query['query'], 'for update'));
+
+        DB::disableQueryLog();
+
+        $this->assertNotEmpty($locks);
+    }
+
     protected function makeProduct(string $label, string $price, ?string $sku = null): Product
     {
         $product = new Product();

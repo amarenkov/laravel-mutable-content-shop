@@ -2,6 +2,8 @@
 
 namespace Amarenkov\MutableContentShop\Support;
 
+use Amarenkov\MutableContent\Helpers\UserHelper;
+
 use Amarenkov\MutableContentShop\Models\CartItem;
 use Amarenkov\MutableContentShop\Models\Invoice;
 use Amarenkov\MutableContentShop\Models\Order;
@@ -50,6 +52,6 @@ class Models
      */
     public static function user(): string
     {
-        return config('mutable-content-shop.user_model') ?? config('auth.providers.users.model');
+        return UserHelper::model('mutable-content-shop');
     }
 }

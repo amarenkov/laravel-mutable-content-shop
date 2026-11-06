@@ -2,9 +2,7 @@
 
 namespace Amarenkov\MutableContentShop\Models;
 
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Attributes\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -22,6 +20,7 @@ use Amarenkov\MutableContent\Attributes\FieldAttr\Common\Label as CFALabel;
 use Amarenkov\MutableContent\Attributes\FieldAttr\Common\IsRequired as CFAIsRequired;
 use Amarenkov\MutableContent\Attributes\FieldAttr\Common\LovCode as CFALovCode;
 use Amarenkov\MutableContent\Attributes\FieldAttr\Common\TypeSettings as CFATypeSettings;
+use Amarenkov\MutableContent\Models\Concerns\OwnedByUser;
 
 use Amarenkov\MutableContentShop\Lovs\OrderState;
 use Amarenkov\MutableContentShop\Support\Models;
@@ -33,6 +32,8 @@ use Amarenkov\MutableContentShop\Support\Models;
 #[ClassLabel('Order')]
 class Order extends ModelWithFields
 {
+    use OwnedByUser;
+
     // const
     #[CFAType(Type::TYPE_STRING), CFALabel('Number')]
     public const FIELD_NUMBER = 'number';
@@ -64,31 +65,13 @@ class Order extends ModelWithFields
     #[CFAType(Type::TYPE_MONEY), CFALabel('Total'), CFATypeSettings([TypeSettings::ALLOW_NEGATIVE => false])]
     public const FIELD_TOTAL = 'total';
 
-    // static
-    protected static array|bool|null $fieldDefinitions = null;
-
     // protected
     protected function sumOfInvoices(string $code): ?Money
     {
-        $result = null;
-
-        foreach ($this->invoices()->get() as $invoice) {
-            $amount = $invoice->getMoney($code);
-
-            if ($amount) {
-                $result = $result ? $result->add($amount) : $amount;
-            }
-        }
-
-        return $result;
+        return Money::sum($this->invoices()->get()->map(fn (Invoice $invoice) => $invoice->getMoney($code)));
     }
 
     // public
-    public function scopeOwnedBy(Builder $query, Authenticatable|int $user): Builder
-    {
-        return $query->whereField(self::FIELD_USER_ID, $user instanceof Authenticatable ? $user->getAuthIdentifier() : $user);
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(Models::user(), self::FIELD_USER_ID);
@@ -139,16 +122,6 @@ class Order extends ModelWithFields
      */
     public function itemsTotal(): ?Money
     {
-        $result = null;
-
-        foreach ($this->items()->get() as $item) {
-            $total = $item->getMoney(OrderItem::FIELD_TOTAL);
-
-            if ($total) {
-                $result = $result ? $result->add($total) : $total;
-            }
-        }
-
-        return $result;
+        return Money::sum($this->items()->get()->map(fn (OrderItem $item) => $item->getMoney(OrderItem::FIELD_TOTAL)));
     }
 }
