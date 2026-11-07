@@ -7,6 +7,8 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-07
+
 ### Added
 
 - Command `shop:prune-carts` deletes abandoned guest carts, config `guest_cart_days`. Migration `update_shop_tables_cart_items_updated_at` adds its index (publish tag `mutable-content-shop-migrations`).
@@ -59,7 +61,8 @@ Requires `amarenkov/laravel-mutable-content` ^0.8.
 - Model classes from the config (`models.order`, `models.order_item`, `models.cart_item`), so an application adds its own fields in subclasses; fields both line classes have are copied from a cart line to an order item.
 - Migration in the `shop` schema (publish tag `mutable-content-shop-migrations`), LOVs and classes registered in the core registries, Russian labels.
 
-[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/amarenkov/laravel-mutable-content-shop/compare/v0.2.0...v0.3.0
