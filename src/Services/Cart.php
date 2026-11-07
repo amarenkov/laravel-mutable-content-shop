@@ -66,6 +66,32 @@ class Cart
         return static::guest($token);
     }
 
+    /**
+     * The cart of the signed in user or of the guest with a token; a guest without one gets no token and no session.
+     */
+    public static function currentOrNull(): ?static
+    {
+        if (Auth::check()) {
+            return static::of(Auth::user());
+        }
+
+        $token = Session::get(self::SESSION_KEY);
+
+        return $token ? static::guest($token) : null;
+    }
+
+    /**
+     * Moves the guest cart of the session to the user and forgets its token.
+     */
+    public static function moveGuestToUser(Authenticatable|int $user): void
+    {
+        $token = Session::pull(self::SESSION_KEY);
+
+        if ($token) {
+            static::guest($token)->moveTo(static::of($user));
+        }
+    }
+
     // protected
     final protected function __construct(
         protected ?int $userId,
@@ -246,6 +272,51 @@ class Cart
                     $line->save();
                 }
             }
+        });
+    }
+
+    /**
+     * Makes the cart hold exactly the given items: other lines are removed, a quantity below 1 removes the line,
+     * the quantities of the lines are set and the missing items are added.
+     *
+     * @param iterable<array{item: Sellable, quantity: int}> $lines
+     */
+    public function sync(iterable $lines): void
+    {
+        DB::transaction(function () use ($lines) {
+            $wanted = collect($lines)->filter(fn (array $entry) => $entry['quantity'] >= 1);
+            $items = $this->items();
+
+            foreach ($items as $line) {
+                if (!$wanted->contains(fn (array $entry) => $line->isOf($entry['item']))) {
+                    $this->remove($line);
+                }
+            }
+
+            foreach ($wanted as $entry) {
+                $line = $items->first(fn (CartItem $line) => $line->isOf($entry['item']));
+
+                if ($line) {
+                    $this->update($line, $entry['quantity']);
+                } else {
+                    $this->add($entry['item'], $entry['quantity']);
+                }
+            }
+        });
+    }
+
+    /**
+     * Syncs the cart and places the order in one transaction: a refused order leaves the cart as it was.
+     *
+     * @param iterable<array{item: Sellable, quantity: int}> $lines
+     * @param array<string, mixed> $fields
+     */
+    public function checkoutWith(iterable $lines, array $fields = []): Order
+    {
+        return DB::transaction(function () use ($lines, $fields) {
+            $this->sync($lines);
+
+            return $this->checkout($fields);
         });
     }
 

@@ -29,6 +29,173 @@ use Amarenkov\MutableContentShop\Tests\TestCase;
 
 class CartTest extends TestCase
 {
+    public function test_current_or_null_gives_no_token_to_a_guest_without_a_cart(): void
+    {
+        $this->assertSame($this->user->id, Cart::currentOrNull()->userId());
+
+        Auth::logout();
+
+        $this->assertNull(Cart::currentOrNull());
+        $this->assertFalse(Session::has(Cart::SESSION_KEY));
+
+        $token = Cart::current()->token();
+
+        $this->assertSame($token, Cart::currentOrNull()->token());
+    }
+
+    public function test_guest_cart_moves_to_the_user_on_login(): void
+    {
+        $product = $this->makeProduct('Bolt', '2');
+
+        Cart::of($this->user)->add($product, 1);
+
+        Auth::logout();
+
+        Cart::current()->add($product, 2);
+
+        Auth::login($this->user);
+
+        $this->assertFalse(Session::has(Cart::SESSION_KEY));
+        $this->assertSame(1, CartItem::count());
+        $this->assertSame(3, Cart::of($this->user)->quantity());
+    }
+
+    public function test_moving_on_login_can_be_turned_off(): void
+    {
+        config(['mutable-content-shop.move_guest_cart_on_login' => false]);
+
+        Auth::logout();
+
+        $cart = Cart::current();
+        $cart->add($this->makeProduct('Bolt', '2'), 2);
+
+        Auth::login($this->user);
+
+        $this->assertSame(0, Cart::of($this->user)->quantity());
+        $this->assertSame(2, $cart->quantity());
+    }
+
+    public function test_login_without_guest_cart_changes_nothing(): void
+    {
+        Auth::logout();
+        Auth::login($this->user);
+
+        $this->assertSame(0, CartItem::count());
+    }
+
+    public function test_sync_makes_the_cart_hold_exactly_the_given_items(): void
+    {
+        $kept = $this->makeProduct('Kept', '2');
+        $dropped = $this->makeProduct('Dropped', '3');
+        $zero = $this->makeProduct('Zero', '4');
+        $added = $this->makeProduct('Added', '5');
+
+        $cart = Cart::of($this->user);
+        $cart->add($kept, 1);
+        $cart->add($dropped, 1);
+        $cart->add($zero, 1);
+
+        $cart->sync([
+            ['item' => $kept, 'quantity' => 4],
+            ['item' => $zero, 'quantity' => 0],
+            ['item' => $added, 'quantity' => 2],
+        ]);
+
+        $lines = $cart->items();
+
+        $this->assertCount(2, $lines);
+        $this->assertTrue($lines[0]->isOf($kept));
+        $this->assertSame(4, (int)$lines[0]->getQuantity());
+        $this->assertTrue($lines[1]->isOf($added));
+        $this->assertSame(2, (int)$lines[1]->getQuantity());
+    }
+
+    public function test_checkout_with_places_the_order_of_the_given_items(): void
+    {
+        $kept = $this->makeProduct('Kept', '2');
+        $dropped = $this->makeProduct('Dropped', '3');
+
+        $cart = Cart::of($this->user);
+        $cart->add($kept, 1);
+        $cart->add($dropped, 1);
+
+        $order = $cart->checkoutWith([['item' => $kept, 'quantity' => 3]], ['phone' => '1']);
+
+        $this->assertCount(1, $order->items);
+        $this->assertTrue($order->getMoney(Order::FIELD_TOTAL)->equals(Money::of('6', Currency::USD)));
+        $this->assertSame(0, $cart->count());
+    }
+
+    public function test_refused_checkout_with_leaves_the_cart_as_it_was(): void
+    {
+        $product = $this->makeProduct('Bolt', '2');
+
+        $cart = Cart::of($this->user);
+        $cart->add($product, 2);
+
+        try {
+            $cart->checkoutWith([]);
+
+            $this->fail('An empty order is refused');
+        } catch (DomainException) {
+        }
+
+        $this->assertSame(2, $cart->quantity());
+    }
+
+    public function test_prune_deletes_only_old_guest_lines(): void
+    {
+        $product = $this->makeProduct('Bolt', '2');
+
+        Cart::of($this->user)->add($product, 1);
+        Cart::guest('fresh')->add($product, 1);
+        Cart::guest('old')->add($product, 1);
+        Cart::guest('older')->add($product, 1);
+
+        $table = DatabaseHelper::tableName('shop.cart_items');
+
+        DB::table($table)->update(['updated_at' => now()->subDays(40)]);
+        DB::table($table)->where('token', 'fresh')->update(['updated_at' => now()]);
+        DB::table($table)->where('token', 'older')->update(['updated_at' => now()->subDays(100), 'deleted_at' => now()]);
+
+        $this->artisan('shop:prune-carts')->assertSuccessful();
+
+        $this->assertSame(2, DB::table($table)->count());
+        $this->assertSame(1, Cart::of($this->user)->count());
+        $this->assertSame(1, Cart::guest('fresh')->count());
+
+        Cart::guest('recent')->add($product, 1);
+        DB::table($table)->where('token', 'recent')->update(['updated_at' => now()->subDays(5)]);
+
+        $this->artisan('shop:prune-carts', ['--days' => 1])->assertSuccessful();
+
+        $this->assertSame(0, Cart::guest('recent')->count());
+        $this->assertSame(1, Cart::guest('fresh')->count());
+    }
+
+    public function test_access_key_of_an_order(): void
+    {
+        $cart = Cart::of($this->user);
+
+        $cart->add($this->makeProduct('Bolt', '2'), 1);
+        $first = $cart->checkout();
+
+        $cart->add($this->makeProduct('Nut', '2'), 1);
+        $second = $cart->checkout();
+
+        $this->assertTrue($first->isAccessKey($first->accessKey()));
+        $this->assertFalse($first->isAccessKey($second->accessKey()));
+        $this->assertFalse($first->isAccessKey(null));
+        $this->assertFalse($first->isAccessKey(['x']));
+
+        $key = $first->accessKey();
+
+        config(['app.key' => 'base64:'.base64_encode(random_bytes(32))]);
+        $this->app->forgetInstance('encrypter');
+
+        $this->assertNotSame($key, $first->accessKey());
+    }
+
     public function test_concurrent_add_ends_up_in_one_line(): void
     {
         $product = $this->makeProduct('Bolt', '2');

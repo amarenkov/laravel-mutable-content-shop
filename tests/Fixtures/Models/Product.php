@@ -15,6 +15,7 @@ use Amarenkov\MutableContent\Attributes\FieldAttr\Common\Type as CFAType;
 use Amarenkov\MutableContent\Attributes\FieldAttr\Common\Label as CFALabel;
 
 use Amarenkov\MutableContentShop\Concerns\HasPriceBreaks;
+use Amarenkov\MutableContentShop\Concerns\IsSellable;
 use Amarenkov\MutableContentShop\Contracts\Sellable;
 
 #[Table('fixtures.products')]
@@ -23,22 +24,13 @@ use Amarenkov\MutableContentShop\Contracts\Sellable;
 class Product extends ModelWithFields implements Sellable
 {
     use HasPriceBreaks;
+    use IsSellable;
 
     // const
     #[CFAType(Type::TYPE_STRING), CFALabel('SKU')]
     public const FIELD_SKU = 'sku';
 
     // public
-    public function sellableType(): string
-    {
-        return $this->getMorphClass();
-    }
-
-    public function sellableId(): int
-    {
-        return (int)$this->getKey();
-    }
-
     public function lineFields(): array
     {
         return [

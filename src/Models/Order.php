@@ -110,6 +110,19 @@ class Order extends ModelWithFields
     }
 
     /**
+     * Secret of the order for links a guest can open; it changes with the application key.
+     */
+    public function accessKey(): string
+    {
+        return hash_hmac('sha256', 'order-access:'.$this->getKey(), app('encrypter')->getKey());
+    }
+
+    public function isAccessKey(mixed $key): bool
+    {
+        return is_string($key) && hash_equals($this->accessKey(), $key);
+    }
+
+    /**
      * Prefix from the config, the date of the order and its id padded to four digits.
      */
     public function makeNumber(): string

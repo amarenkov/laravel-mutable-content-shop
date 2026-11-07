@@ -7,3 +7,7 @@ parameters:
         - src
     universalObjectCratesClasses:
         - Amarenkov\MutableContent\Models\ModelWithFields
+    ignoreErrors:
+        -
+            identifier: trait.unused
+            path: src/Concerns/IsSellable.php

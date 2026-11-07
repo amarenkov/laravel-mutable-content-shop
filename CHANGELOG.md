@@ -7,6 +7,18 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Command `shop:prune-carts` deletes abandoned guest carts, config `guest_cart_days`. Migration `update_shop_tables_cart_items_updated_at` adds its index (publish tag `mutable-content-shop-migrations`).
+- `Cart::currentOrNull()` reads the cart without creating a token for a guest.
+- `Cart::moveGuestToUser()`, `Cart::sync()`, `Cart::checkoutWith()`: an order form changes the cart and places the order in one transaction.
+- `Order::accessKey()` and `Order::isAccessKey()` for links a guest can open.
+- `Concerns\IsSellable` with the type and id of a `Sellable` model.
+
+### Changed
+
+- The guest cart moves to the user on sign in; config `move_guest_cart_on_login` turns that off.
+
 ## [0.4.1] - 2026-11-07
 
 ### Fixed

@@ -2,12 +2,16 @@
 
 namespace Amarenkov\MutableContentShop;
 
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 use Amarenkov\MutableContent\Domain\LovRegistry;
 use Amarenkov\MutableContent\Domain\MutableClassRegistry;
 
+use Amarenkov\MutableContentShop\Console\Commands\PruneCarts;
 use Amarenkov\MutableContentShop\Lovs\InvoicePaymentState;
+use Amarenkov\MutableContentShop\Services\Cart;
 use Amarenkov\MutableContentShop\Support\Lovs;
 use Amarenkov\MutableContentShop\Support\Models;
 
@@ -51,5 +55,15 @@ class MutableContentShopServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => $this->app->langPath('vendor/mutable-content-shop'),
         ], 'mutable-content-shop-lang');
+
+        Event::listen(Login::class, function (Login $event) {
+            if (config('mutable-content-shop.move_guest_cart_on_login')) {
+                Cart::moveGuestToUser($event->user);
+            }
+        });
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([PruneCarts::class]);
+        }
     }
 }

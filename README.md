@@ -126,9 +126,18 @@ $cart->total();                     // ?Money
 Cart::guest($token)->moveTo(Cart::of($user));   // after sign in, quantities add up
 ```
 
-A guest cart is known by a token in the session (`Cart::SESSION_KEY`). Session data survives the
-regeneration on sign in, so a `Login` listener can move it:
-`Cart::guest(session(Cart::SESSION_KEY))->moveTo(Cart::of($event->user))`.
+A guest cart is known by a token in the session (`Cart::SESSION_KEY`). `Cart::current()` creates the
+token on the first call; `Cart::currentOrNull()` does not, so a page header can read the cart without
+starting a session for every visitor.
+
+On sign in the guest cart moves to the user. Set `move_guest_cart_on_login` to `false` to turn that
+off; `Cart::moveGuestToUser($user)` does the same by hand.
+
+`shop:prune-carts` deletes guest carts not changed for `guest_cart_days` (30 by default, `--days`
+overrides it). Add it to the schedule of the application.
+
+Any model implementing `Sellable` can use `Concerns\IsSellable` for its type and id and only write
+`lineFields()`.
 
 ### Checkout
 
@@ -137,6 +146,13 @@ the user, the fields given, a number and the total; every line is copied into an
 all fields both classes have; the cart is emptied. `OrderPlaced` (order id, user id) is
 dispatched after the commit, a good place for notifications. An empty cart throws
 `DomainException`.
+
+`checkoutWith($lines, $fields)` first makes the cart hold exactly the given items, as `sync($lines)`
+does, in the same transaction: an order form can change quantities and drop lines, and a refused order
+leaves the cart as it was. Lines are `['item' => $sellable, 'quantity' => 3]`.
+
+`$order->accessKey()` gives a secret for a link a guest can open, `$order->isAccessKey($key)` checks
+it. The key is derived from the application key, so changing that key invalidates the links.
 
 The number is the `order_number_prefix` config value, the date and the order id padded to four
 digits. Override `Order::makeNumber()` in a subclass for another format.
