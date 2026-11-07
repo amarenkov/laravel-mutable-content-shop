@@ -7,6 +7,7 @@ use DomainException;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
@@ -91,6 +92,46 @@ class Cart
         }
     }
 
+    /**
+     * @return Builder<CartItem>
+     */
+    protected function lineQuery(Sellable $item): Builder
+    {
+        return $this->query()
+            ->whereField(CartItem::FIELD_SELLABLE_TYPE, $item->sellableType())
+            ->whereField(CartItem::FIELD_SELLABLE_ID, $item->sellableId());
+    }
+
+    protected function findForUpdate(Sellable $item): ?CartItem
+    {
+        return $this->lineQuery($item)->lockForUpdate()->first();
+    }
+
+    protected function addLine(Sellable $item, int $quantity): CartItem
+    {
+        $line = $this->findForUpdate($item);
+
+        if ($line) {
+            $line->setQuantity((int)$line->getQuantity() + $quantity);
+        } else {
+            $class = Models::cartItem();
+
+            $line = new $class();
+            $line->fillLine($item->lineFields());
+            $line->fill([
+                CartItem::FIELD_USER_ID => $this->userId,
+                CartItem::FIELD_TOKEN => $this->userId === null ? $this->token : null,
+                CartItem::FIELD_SELLABLE_TYPE => $item->sellableType(),
+                CartItem::FIELD_SELLABLE_ID => $item->sellableId(),
+            ]);
+            $line->setQuantity($quantity);
+        }
+
+        $line->save();
+
+        return $line;
+    }
+
     // public
     public function userId(): ?int
     {
@@ -124,38 +165,20 @@ class Cart
 
     public function find(Sellable $item): ?CartItem
     {
-        return $this->query()
-            ->whereField(CartItem::FIELD_SELLABLE_TYPE, $item->sellableType())
-            ->whereField(CartItem::FIELD_SELLABLE_ID, $item->sellableId())
-            ->first();
+        return $this->lineQuery($item)->first();
     }
 
     /**
-     * Adds the quantity to the line of the item, a new line takes its fields from the item.
+     * Adds the quantity to the line of the item, a new line takes its fields from the item. Concurrent requests
+     * of one cart end up in one line: the first one inserts it, the other one adds to it.
      */
     public function add(Sellable $item, int $quantity): CartItem
     {
-        $line = $this->find($item);
-
-        if ($line) {
-            $line->setQuantity((int)$line->getQuantity() + $quantity);
-        } else {
-            $class = Models::cartItem();
-
-            $line = new $class();
-            $line->fillLine($item->lineFields());
-            $line->fill([
-                CartItem::FIELD_USER_ID => $this->userId,
-                CartItem::FIELD_TOKEN => $this->userId === null ? $this->token : null,
-                CartItem::FIELD_SELLABLE_TYPE => $item->sellableType(),
-                CartItem::FIELD_SELLABLE_ID => $item->sellableId(),
-            ]);
-            $line->setQuantity($quantity);
+        try {
+            return DB::transaction(fn () => $this->addLine($item, $quantity));
+        } catch (UniqueConstraintViolationException) {
+            return DB::transaction(fn () => $this->addLine($item, $quantity));
         }
-
-        $line->save();
-
-        return $line;
     }
 
     public function update(CartItem $line, int|string|null $quantity): CartItem

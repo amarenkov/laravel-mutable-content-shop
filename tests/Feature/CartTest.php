@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 
+use Amarenkov\MutableContent\Helpers\DatabaseHelper;
 use Amarenkov\MutableContent\Models\Lov\Currency;
 use Amarenkov\MutableContent\ValueObjects\Money;
 
+use Amarenkov\MutableContentShop\Contracts\Sellable;
 use Amarenkov\MutableContentShop\Events\OrderPlaced;
 use Amarenkov\MutableContentShop\Lovs\OrderItemState;
 use Amarenkov\MutableContentShop\Lovs\OrderState;
@@ -27,6 +29,53 @@ use Amarenkov\MutableContentShop\Tests\TestCase;
 
 class CartTest extends TestCase
 {
+    public function test_concurrent_add_ends_up_in_one_line(): void
+    {
+        $product = $this->makeProduct('Bolt', '2');
+
+        $cart = RacingCart::of(1);
+        $cart->add($product, 2);
+
+        $cart->missNextLine = true;
+        $line = $cart->add($product, 3);
+
+        $this->assertSame(1, $cart->count());
+        $this->assertSame(5, (int)$line->getQuantity());
+        $this->assertSame(5, $cart->quantity());
+    }
+
+    public function test_guest_and_user_lines_of_one_item_do_not_collide(): void
+    {
+        $product = $this->makeProduct('Bolt', '2');
+
+        Cart::of(1)->add($product, 1);
+        Cart::of(2)->add($product, 1);
+        Cart::guest('first')->add($product, 1);
+        Cart::guest('second')->add($product, 1);
+
+        $this->assertSame(4, CartItem::count());
+    }
+
+    public function test_unique_lines_migration_removes_duplicates(): void
+    {
+        $product = $this->makeProduct('Bolt', '2');
+
+        $migration = require __DIR__.'/../../database/migrations/update_shop_tables_unique_cart_lines.php';
+        $migration->down();
+
+        Cart::of(1)->add($product, 1);
+
+        $table = DatabaseHelper::tableName('shop.cart_items');
+        $newest = DB::table($table)->insertGetId(['fields' => DB::table($table)->value('fields')]);
+
+        Cart::guest('other')->add($product, 7);
+
+        $migration->up();
+
+        $this->assertSame([$newest], Cart::of(1)->items()->pluck('id')->all());
+        $this->assertSame(7, Cart::guest('other')->quantity());
+    }
+
     public function test_checkout_locks_the_lines(): void
     {
         $cart = Cart::of(1);
@@ -190,5 +239,21 @@ class CartTest extends TestCase
         $this->assertSame('R-10K', $item->getField(SkuOrderItem::FIELD_SKU));
         $this->assertSame('0.012345', $item->getMoney(SkuOrderItem::FIELD_UNIT_PRICE)->amount);
         $this->assertSame('12.35', $order->getMoney(Order::FIELD_TOTAL)->amount);
+    }
+}
+
+class RacingCart extends Cart
+{
+    public bool $missNextLine = false;
+
+    protected function findForUpdate(Sellable $item): ?CartItem
+    {
+        if ($this->missNextLine) {
+            $this->missNextLine = false;
+
+            return null;
+        }
+
+        return parent::findForUpdate($item);
     }
 }

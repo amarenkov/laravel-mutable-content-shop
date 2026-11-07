@@ -7,6 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Concurrent `Cart::add()` calls for one item no longer create two lines that checkout bills separately. Migration `update_shop_tables_unique_cart_lines` (publish tag `mutable-content-shop-migrations`) adds unique indexes on the lines of a user and of a guest; it removes existing duplicate lines and keeps the newest one.
+
 ## [0.4.0] - 2026-11-06
 
 Requires `amarenkov/laravel-mutable-content` ^0.9.
